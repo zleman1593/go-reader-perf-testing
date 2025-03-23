@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Go Reader Performance Benchmark Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .chart-container { margin-bottom: 40px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Go Reader Performance Benchmark Report</h1>
+        <p>Benchmark ran on Mar 23, 2025 10:26:52</p>
+        <p>Source file: /Users/zackleman/Downloads/obsidian.dmg</p>
+        <p>Number of runs per configuration: 6</p>
+        
+        <h2>Performance Summary</h2>
+        
+        <div class="chart-container">
+            <h3>Server Response Time (ms)</h3>
+            <canvas id="serverTimingChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Client Download Time (ms)</h3>
+            <canvas id="clientTimingChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>Memory Usage (MiB)</h3>
+            <canvas id="memoryChart"></canvas>
+        </div>
+        
+        <div class="chart-container">
+            <h3>System Calls</h3>
+            <canvas id="syscallChart"></canvas>
+        </div>
+        
+        <h2>Detailed Results</h2>
+        <table id="resultsTable">
+            <tr>
+                <th>Execution Path</th>
+                <th>Buffer Size</th>
+                <th>Avg Server Time (ms)</th>
+                <th>Std Dev Server</th>
+                <th>Avg Client Time (ms)</th>
+                <th>Std Dev Client</th>
+                <th>Avg Memory (MiB)</th>
+                <th>Max Memory (MiB)</th>
+                <th>Avg Read Calls</th>
+                <th>Avg Write Calls</th>
+                <th>Avg Total Calls</th>
+            </tr>
+        </table>
+    </div>
+    
+    <script>
+    // Load the benchmark data
+    const benchmarkData = {"config":{"SourceFile":"/Users/zackleman/Downloads/obsidian.dmg","Port":8082,"Runs":6,"BufferSizes":[1024,8192,65536,1048576,16777216,1073741824],"OutputDirectory":"benchmark_results"},"rawResults":[{"executionPath":"NOBUFFER","bufferSize":0,"runId":1,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:15.058853-07:00"},{"executionPath":"NOBUFFER","bufferSize":0,"runId":2,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:17.318123-07:00"},{"executionPath":"NOBUFFER","bufferSize":0,"runId":3,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:19.347558-07:00"},{"executionPath":"NOBUFFER","bufferSize":0,"runId":4,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:21.382801-07:00"},{"executionPath":"NOBUFFER","bufferSize":0,"runId":5,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:23.424057-07:00"},{"executionPath":"NOBUFFER","bufferSize":0,"runId":6,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:25.462755-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1024,"runId":1,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:27.49691-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1024,"runId":2,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:29.526766-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1024,"runId":3,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:31.576847-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1024,"runId":4,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:33.621359-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1024,"runId":5,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:35.657621-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1024,"runId":6,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:37.711737-07:00"},{"executionPath":"BUFIOREADER","bufferSize":8192,"runId":1,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:39.746862-07:00"},{"executionPath":"BUFIOREADER","bufferSize":8192,"runId":2,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:41.774569-07:00"},{"executionPath":"BUFIOREADER","bufferSize":8192,"runId":3,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:43.802903-07:00"},{"executionPath":"BUFIOREADER","bufferSize":8192,"runId":4,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:45.829852-07:00"},{"executionPath":"BUFIOREADER","bufferSize":8192,"runId":5,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:47.867129-07:00"},{"executionPath":"BUFIOREADER","bufferSize":8192,"runId":6,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:49.897465-07:00"},{"executionPath":"BUFIOREADER","bufferSize":65536,"runId":1,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:51.932504-07:00"},{"executionPath":"BUFIOREADER","bufferSize":65536,"runId":2,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:53.964624-07:00"},{"executionPath":"BUFIOREADER","bufferSize":65536,"runId":3,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:55.989913-07:00"},{"executionPath":"BUFIOREADER","bufferSize":65536,"runId":4,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:25:58.025975-07:00"},{"executionPath":"BUFIOREADER","bufferSize":65536,"runId":5,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:00.054037-07:00"},{"executionPath":"BUFIOREADER","bufferSize":65536,"runId":6,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:02.084124-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1048576,"runId":1,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:04.11447-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1048576,"runId":2,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:06.141254-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1048576,"runId":3,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:08.171879-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1048576,"runId":4,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:10.201118-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1048576,"runId":5,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:12.230126-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1048576,"runId":6,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:14.25976-07:00"},{"executionPath":"BUFIOREADER","bufferSize":16777216,"runId":1,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:16.288597-07:00"},{"executionPath":"BUFIOREADER","bufferSize":16777216,"runId":2,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:18.315604-07:00"},{"executionPath":"BUFIOREADER","bufferSize":16777216,"runId":3,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:20.342869-07:00"},{"executionPath":"BUFIOREADER","bufferSize":16777216,"runId":4,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:22.372995-07:00"},{"executionPath":"BUFIOREADER","bufferSize":16777216,"runId":5,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:24.402271-07:00"},{"executionPath":"BUFIOREADER","bufferSize":16777216,"runId":6,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:26.428385-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1073741824,"runId":1,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:28.458661-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1073741824,"runId":2,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:30.495459-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1073741824,"runId":3,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:32.538849-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1073741824,"runId":4,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:34.568438-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1073741824,"runId":5,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:36.600475-07:00"},{"executionPath":"BUFIOREADER","bufferSize":1073741824,"runId":6,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:38.631528-07:00"},{"executionPath":"PRELOAD","bufferSize":0,"runId":1,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:40.660942-07:00"},{"executionPath":"PRELOAD","bufferSize":0,"runId":2,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:42.710942-07:00"},{"executionPath":"PRELOAD","bufferSize":0,"runId":3,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:44.740616-07:00"},{"executionPath":"PRELOAD","bufferSize":0,"runId":4,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:46.786629-07:00"},{"executionPath":"PRELOAD","bufferSize":0,"runId":5,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:48.821889-07:00"},{"executionPath":"PRELOAD","bufferSize":0,"runId":6,"serverTiming":0,"clientTiming":0,"memoryUsage":{"allocMiB":0,"totalAlloc":0,"sysMiB":0,"numGC":0,"maxHeapMiB":0,"heapInUseMiB":0},"systemCalls":{"readCalls":0,"writeCalls":0,"totalCalls":0},"timestamp":"2025-03-23T10:26:50.87042-07:00"}],"aggregateData":{"BUFIOREADER_1024":{"executionPath":"BUFIOREADER","bufferSize":1024,"numRuns":6,"avgServerTime":0,"minServerTime":0,"maxServerTime":0,"stdDevServer":0,"avgClientTime":0,"minClientTime":0,"maxClientTime":0,"stdDevClient":0,"avgMemoryAlloc":0,"maxMemoryAlloc":0,"avgHeapInUse":0,"maxHeapInUse":0,"avgReadCalls":0,"avgWriteCalls":0,"avgTotalCalls":0,"maxTotalCalls":0},"BUFIOREADER_1048576":{"executionPath":"BUFIOREADER","bufferSize":1048576,"numRuns":6,"avgServerTime":0,"minServerTime":0,"maxServerTime":0,"stdDevServer":0,"avgClientTime":0,"minClientTime":0,"maxClientTime":0,"stdDevClient":0,"avgMemoryAlloc":0,"maxMemoryAlloc":0,"avgHeapInUse":0,"maxHeapInUse":0,"avgReadCalls":0,"avgWriteCalls":0,"avgTotalCalls":0,"maxTotalCalls":0},"BUFIOREADER_1073741824":{"executionPath":"BUFIOREADER","bufferSize":1073741824,"numRuns":6,"avgServerTime":0,"minServerTime":0,"maxServerTime":0,"stdDevServer":0,"avgClientTime":0,"minClientTime":0,"maxClientTime":0,"stdDevClient":0,"avgMemoryAlloc":0,"maxMemoryAlloc":0,"avgHeapInUse":0,"maxHeapInUse":0,"avgReadCalls":0,"avgWriteCalls":0,"avgTotalCalls":0,"maxTotalCalls":0},"BUFIOREADER_16777216":{"executionPath":"BUFIOREADER","bufferSize":16777216,"numRuns":6,"avgServerTime":0,"minServerTime":0,"maxServerTime":0,"stdDevServer":0,"avgClientTime":0,"minClientTime":0,"maxClientTime":0,"stdDevClient":0,"avgMemoryAlloc":0,"maxMemoryAlloc":0,"avgHeapInUse":0,"maxHeapInUse":0,"avgReadCalls":0,"avgWriteCalls":0,"avgTotalCalls":0,"maxTotalCalls":0},"BUFIOREADER_65536":{"executionPath":"BUFIOREADER","bufferSize":65536,"numRuns":6,"avgServerTime":0,"minServerTime":0,"maxServerTime":0,"stdDevServer":0,"avgClientTime":0,"minClientTime":0,"maxClientTime":0,"stdDevClient":0,"avgMemoryAlloc":0,"maxMemoryAlloc":0,"avgHeapInUse":0,"maxHeapInUse":0,"avgReadCalls":0,"avgWriteCalls":0,"avgTotalCalls":0,"maxTotalCalls":0},"BUFIOREADER_8192":{"executionPath":"BUFIOREADER","bufferSize":8192,"numRuns":6,"avgServerTime":0,"minServerTime":0,"maxServerTime":0,"stdDevServer":0,"avgClientTime":0,"minClientTime":0,"maxClientTime":0,"stdDevClient":0,"avgMemoryAlloc":0,"maxMemoryAlloc":0,"avgHeapInUse":0,"maxHeapInUse":0,"avgReadCalls":0,"avgWriteCalls":0,"avgTotalCalls":0,"maxTotalCalls":0},"NOBUFFER_0":{"executionPath":"NOBUFFER","bufferSize":0,"numRuns":6,"avgServerTime":0,"minServerTime":0,"maxServerTime":0,"stdDevServer":0,"avgClientTime":0,"minClientTime":0,"maxClientTime":0,"stdDevClient":0,"avgMemoryAlloc":0,"maxMemoryAlloc":0,"avgHeapInUse":0,"maxHeapInUse":0,"avgReadCalls":0,"avgWriteCalls":0,"avgTotalCalls":0,"maxTotalCalls":0},"PRELOAD_0":{"executionPath":"PRELOAD","bufferSize":0,"numRuns":6,"avgServerTime":0,"minServerTime":0,"maxServerTime":0,"stdDevServer":0,"avgClientTime":0,"minClientTime":0,"maxClientTime":0,"stdDevClient":0,"avgMemoryAlloc":0,"maxMemoryAlloc":0,"avgHeapInUse":0,"maxHeapInUse":0,"avgReadCalls":0,"avgWriteCalls":0,"avgTotalCalls":0,"maxTotalCalls":0}}};
+    
+    // Prepare data for charts
+    const labels = [];
+    const serverTimingData = [];
+    const serverTimingError = [];
+    const clientTimingData = [];
+    const clientTimingError = [];
+    const memoryData = [];
+    const readCallsData = [];
+    const writeCallsData = [];
+    
+    // Populate the table
+    const table = document.getElementById('resultsTable');
+    
+    // Sort by execution path and buffer size
+    const sortedKeys = Object.keys(benchmarkData.aggregateData).sort((a, b) => {
+        const [execA, bufA] = a.split('_');
+        const [execB, bufB] = b.split('_');
+        
+        if (execA !== execB) {
+            // Order: NOBUFFER, BUFIOREADER, PRELOAD
+            const order = { 'NOBUFFER': 1, 'BUFIOREADER': 2, 'PRELOAD': 3 };
+            return order[execA] - order[execB];
+        }
+        
+        return parseInt(bufA) - parseInt(bufB);
+    });
+    
+    for (const key of sortedKeys) {
+        const stats = benchmarkData.aggregateData[key];
+        
+        // Add to charts data
+        let label = stats.executionPath;
+        if (stats.executionPath === 'BUFIOREADER') {
+            const bufferSizeStr = formatBufferSize(stats.bufferSize);
+            label += ' (' + bufferSizeStr + ')';
+        }
+        labels.push(label);
+        
+        serverTimingData.push(stats.avgServerTime);
+        serverTimingError.push(stats.stdDevServer);
+        
+        clientTimingData.push(stats.avgClientTime);
+        clientTimingError.push(stats.stdDevClient);
+        
+        memoryData.push(stats.avgMemoryAlloc);
+        readCallsData.push(stats.avgReadCalls);
+        writeCallsData.push(stats.avgWriteCalls);
+        
+        // Add to table
+        const row = table.insertRow(-1);
+        row.insertCell(0).textContent = stats.executionPath;
+        row.insertCell(1).textContent = stats.executionPath === 'BUFIOREADER' ? 
+            formatBufferSize(stats.bufferSize) : '-';
+        row.insertCell(2).textContent = stats.avgServerTime.toFixed(2);
+        row.insertCell(3).textContent = stats.stdDevServer.toFixed(2);
+        row.insertCell(4).textContent = stats.avgClientTime.toFixed(2);
+        row.insertCell(5).textContent = stats.stdDevClient.toFixed(2);
+        row.insertCell(6).textContent = stats.avgMemoryAlloc.toFixed(2);
+        row.insertCell(7).textContent = stats.maxMemoryAlloc;
+        row.insertCell(8).textContent = stats.avgReadCalls.toFixed(2);
+        row.insertCell(9).textContent = stats.avgWriteCalls.toFixed(2);
+        row.insertCell(10).textContent = stats.avgTotalCalls.toFixed(2);
+    }
+    
+    // Helper function to format buffer sizes
+    function formatBufferSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+    }
+    
+    // Create charts
+    const serverTimingChart = new Chart(
+        document.getElementById('serverTimingChart'),
+        {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Avg Server Response Time (ms)',
+                    data: serverTimingData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 1,
+                    errorBars: {
+                        show: true,
+                        color: 'red',
+                        width: 2
+                    },
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Time (ms)'
+                        }
+                    }
+                }
+            }
+        }
+    );
+    
+    const clientTimingChart = new Chart(
+        document.getElementById('clientTimingChart'),
+        {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Avg Client Download Time (ms)',
+                    data: clientTimingData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Time (ms)'
+                        }
+                    }
+                }
+            }
+        }
+    );
+    
+    const memoryChart = new Chart(
+        document.getElementById('memoryChart'),
+        {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Avg Memory Usage (MiB)',
+                    data: memoryData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Memory (MiB)'
+                        }
+                    }
+                }
+            }
+        }
+    );
+    
+    const syscallChart = new Chart(
+        document.getElementById('syscallChart'),
+        {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Avg Read Calls',
+                        data: readCallsData,
+                        backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                        borderColor: 'rgb(153, 102, 255)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Avg Write Calls',
+                        data: writeCallsData,
+                        backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                        borderColor: 'rgb(255, 159, 64)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of System Calls'
+                        }
+                    }
+                }
+            }
+        }
+    );
+    </script>
+</body>
+</html>

@@ -41,6 +41,8 @@ func logMemUsage() {
 	runtime.ReadMemStats(&m)
 	log.Printf("MEMORY: Alloc = %v MiB, TotalAlloc = %v MiB, Sys = %v MiB, NumGC = %v",
 		bToMb(m.Alloc), bToMb(m.TotalAlloc), bToMb(m.Sys), m.NumGC)
+	log.Printf("MEMORY: HeapInUse = %v MiB, MaxHeap = %v MiB", 
+		bToMb(m.HeapInuse), bToMb(m.HeapSys))
 }
 
 // bToMb converts bytes to megabytes for more readable output

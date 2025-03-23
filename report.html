@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Go Reader Performance Benchmark Visualization</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-error-bars"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .chart-container {
+            margin-bottom: 40px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .chart-row {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .chart-box {
+            width: 48%;
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 30px;
+        }
+        .file-input {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: #eee;
+            border-radius: 5px;
+        }
+        canvas {
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Go Reader Performance Benchmark Visualization</h1>
+        
+        <div class="file-input">
+            <h3>Load Benchmark Results</h3>
+            <input type="file" id="fileInput" accept=".json">
+            <button id="loadButton">Load Results</button>
+        </div>
+        
+        <div id="benchmarkInfo"></div>
+        
+        <h2>Performance Charts</h2>
+        
+        <div class="chart-row">
+            <div class="chart-box">
+                <div class="chart-container">
+                    <h3>Server Response Time (ms)</h3>
+                    <canvas id="serverTimingChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-container">
+                    <h3>Client Download Time (ms)</h3>
+                    <canvas id="clientTimingChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-row">
+            <div class="chart-box">
+                <div class="chart-container">
+                    <h3>Memory Usage (MiB)</h3>
+                    <canvas id="memoryChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-container">
+                    <h3>System Calls</h3>
+                    <canvas id="syscallChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <h2>Aggregated Results</h2>
+        <div class="table-container">
+            <table id="aggregateTable">
+                <tr>
+                    <th>Execution Path</th>
+                    <th>Buffer Size</th>
+                    <th>Avg Server Time (ms)</th>
+                    <th>Min-Max Server (ms)</th>
+                    <th>Std Dev</th>
+                    <th>Avg Client Time (ms)</th>
+                    <th>Min-Max Client (ms)</th>
+                    <th>Std Dev</th>
+                    <th>Avg Memory (MiB)</th>
+                    <th>Max Memory (MiB)</th>
+                    <th>Avg System Calls</th>
+                    <th>Read Calls</th>
+                    <th>Write Calls</th>
+                </tr>
+                <tr>
+                    <td colspan="13" style="text-align:center;">No data loaded</td>
+                </tr>
+            </table>
+        </div>
+        
+        <h2>Raw Results</h2>
+        <div class="table-container">
+            <table id="rawResultsTable">
+                <tr>
+                    <th>Run ID</th>
+                    <th>Execution Path</th>
+                    <th>Buffer Size</th>
+                    <th>Server Time (ms)</th>
+                    <th>Client Time (ms)</th>
+                    <th>Memory Alloc (MiB)</th>
+                    <th>System Calls</th>
+                    <th>Read Calls</th>
+                    <th>Write Calls</th>
+                    <th>Timestamp</th>
+                </tr>
+                <tr>
+                    <td colspan="10" style="text-align:center;">No data loaded</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        // Chart objects
+        let serverTimingChart, clientTimingChart, memoryChart, syscallChart;
+        
+        // Event listener for file input
+        document.getElementById('loadButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please select a file first');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const benchmarkData = JSON.parse(e.target.result);
+                    displayBenchmarkData(benchmarkData);
+                } catch (error) {
+                    alert('Error parsing JSON file: ' + error.message);
+                }
+            };
+            
+            reader.readAsText(file);
+        });
+        
+        function displayBenchmarkData(benchmarkData) {
+            // Display benchmark info
+            const infoDiv = document.getElementById('benchmarkInfo');
+            infoDiv.innerHTML = `
+                <h2>Benchmark Information</h2>
+                <p><strong>Source File:</strong> ${benchmarkData.config.sourceFile}</p>
+                <p><strong>Runs per Configuration:</strong> ${benchmarkData.config.runs}</p>
+                <p><strong>Port:</strong> ${benchmarkData.config.port}</p>
+                <p><strong>Buffer Sizes Tested:</strong> ${benchmarkData.config.bufferSizes.map(formatBufferSize).join(', ')}</p>
+            `;
+            
+            // Clear tables
+            clearTable('aggregateTable');
+            clearTable('rawResultsTable');
+            
+            // Populate aggregate results table
+            populateAggregateTable(benchmarkData.aggregateData);
+            
+            // Populate raw results table
+            populateRawResultsTable(benchmarkData.rawResults);
+            
+            // Create or update charts
+            createOrUpdateCharts(benchmarkData);
+        }
+        
+        function clearTable(tableId) {
+            const table = document.getElementById(tableId);
+            // Keep the header row
+            while (table.rows.length > 1) {
+                table.deleteRow(1);
+            }
+        }
+        
+        function populateAggregateTable(aggregateData) {
+            const table = document.getElementById('aggregateTable');
+            
+            // Sort by execution path and buffer size
+            const sortedKeys = Object.keys(aggregateData).sort((a, b) => {
+                const [execA, bufA] = a.split('_');
+                const [execB, bufB] = b.split('_');
+                
+                // Order: NOBUFFER, BUFIOREADER, PRELOAD
+                const order = { 'NOBUFFER': 1, 'BUFIOREADER': 2, 'PRELOAD': 3 };
+                if (execA !== execB) {
+                    return order[execA] - order[execB];
+                }
+                
+                return parseInt(bufA) - parseInt(bufB);
+            });
+            
+            for (const key of sortedKeys) {
+                const stats = aggregateData[key];
+                const row = table.insertRow(-1);
+                
+                // Execution Path
+                row.insertCell(0).textContent = stats.executionPath;
+                
+                // Buffer Size
+                row.insertCell(1).textContent = stats.executionPath === 'BUFIOREADER' ? 
+                    formatBufferSize(stats.bufferSize) : '-';
+                
+                // Server Time
+                row.insertCell(2).textContent = stats.avgServerTime.toFixed(2);
+                row.insertCell(3).textContent = `${stats.minServerTime.toFixed(2)} - ${stats.maxServerTime.toFixed(2)}`;
+                row.insertCell(4).textContent = stats.stdDevServer.toFixed(2);
+                
+                // Client Time
+                row.insertCell(5).textContent = stats.avgClientTime.toFixed(2);
+                row.insertCell(6).textContent = `${stats.minClientTime.toFixed(2)} - ${stats.maxClientTime.toFixed(2)}`;
+                row.insertCell(7).textContent = stats.stdDevClient.toFixed(2);
+                
+                // Memory
+                row.insertCell(8).textContent = stats.avgMemoryAlloc.toFixed(2);
+                row.insertCell(9).textContent = stats.maxMemoryAlloc;
+                
+                // System Calls
+                row.insertCell(10).textContent = stats.avgTotalCalls.toFixed(2);
+                row.insertCell(11).textContent = stats.avgReadCalls.toFixed(2);
+                row.insertCell(12).textContent = stats.avgWriteCalls.toFixed(2);
+            }
+        }
+        
+        function populateRawResultsTable(rawResults) {
+            const table = document.getElementById('rawResultsTable');
+            
+            // Sort by execution path, buffer size, and run id
+            rawResults.sort((a, b) => {
+                // Order: NOBUFFER, BUFIOREADER, PRELOAD
+                const order = { 'NOBUFFER': 1, 'BUFIOREADER': 2, 'PRELOAD': 3 };
+                
+                if (a.executionPath !== b.executionPath) {
+                    return order[a.executionPath] - order[b.executionPath];
+                }
+                
+                if (a.bufferSize !== b.bufferSize) {
+                    return a.bufferSize - b.bufferSize;
+                }
+                
+                return a.runId - b.runId;
+            });
+            
+            for (const result of rawResults) {
+                const row = table.insertRow(-1);
+                
+                // Run ID
+                row.insertCell(0).textContent = result.runId;
+                
+                // Execution Path
+                row.insertCell(1).textContent = result.executionPath;
+                
+                // Buffer Size
+                row.insertCell(2).textContent = result.executionPath === 'BUFIOREADER' ? 
+                    formatBufferSize(result.bufferSize) : '-';
+                
+                // Server Time
+                row.insertCell(3).textContent = result.serverTiming.toFixed(2);
+                
+                // Client Time
+                row.insertCell(4).textContent = result.clientTiming.toFixed(2);
+                
+                // Memory Allocation
+                row.insertCell(5).textContent = result.memoryUsage.allocMiB;
+                
+                // System Calls
+                row.insertCell(6).textContent = result.systemCalls.totalCalls;
+                row.insertCell(7).textContent = result.systemCalls.readCalls;
+                row.insertCell(8).textContent = result.systemCalls.writeCalls;
+                
+                // Timestamp
+                const timestamp = new Date(result.timestamp);
+                row.insertCell(9).textContent = timestamp.toLocaleString();
+            }
+        }
+        
+        function createOrUpdateCharts(benchmarkData) {
+            // Prepare chart data
+            const chartData = prepareChartData(benchmarkData.aggregateData);
+            
+            // Destroy existing charts if they exist
+            if (serverTimingChart) serverTimingChart.destroy();
+            if (clientTimingChart) clientTimingChart.destroy();
+            if (memoryChart) memoryChart.destroy();
+            if (syscallChart) syscallChart.destroy();
+            
+            // Create charts
+            serverTimingChart = createBarChart('serverTimingChart', 
+                'Server Response Time (ms)', 
+                chartData.labels, 
+                [{ 
+                    label: 'Avg Server Time (ms)',
+                    data: chartData.serverTimingData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 1,
+                    errorBars: {
+                        show: true,
+                        data: chartData.serverTimingError
+                    }
+                }],
+                'Time (ms)'
+            );
+            
+            clientTimingChart = createBarChart('clientTimingChart', 
+                'Client Download Time (ms)', 
+                chartData.labels, 
+                [{ 
+                    label: 'Avg Client Time (ms)',
+                    data: chartData.clientTimingData,
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    borderWidth: 1,
+                    errorBars: {
+                        show: true,
+                        data: chartData.clientTimingError
+                    }
+                }],
+                'Time (ms)'
+            );
+            
+            memoryChart = createBarChart('memoryChart', 
+                'Memory Usage (MiB)', 
+                chartData.labels, 
+                [{ 
+                    label: 'Avg Memory Allocation (MiB)',
+                    data: chartData.memoryAllocData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgb(75, 192, 192)',
+                    borderWidth: 1
+                },
+                { 
+                    label: 'Avg Heap In Use (MiB)',
+                    data: chartData.heapInUseData,
+                    backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                    borderColor: 'rgb(153, 102, 255)',
+                    borderWidth: 1
+                }],
+                'Memory (MiB)'
+            );
+            
+            syscallChart = createBarChart('syscallChart', 
+                'System Calls', 
+                chartData.labels, 
+                [{ 
+                    label: 'Avg Read Calls',
+                    data: chartData.readCallsData,
+                    backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                    borderColor: 'rgb(153, 102, 255)',
+                    borderWidth: 1
+                },
+                { 
+                    label: 'Avg Write Calls',
+                    data: chartData.writeCallsData,
+                    backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                    borderColor: 'rgb(255, 159, 64)',
+                    borderWidth: 1
+                },
+                { 
+                    label: 'Avg Total Calls',
+                    data: chartData.totalCallsData,
+                    backgroundColor: 'rgba(201, 203, 207, 0.5)',
+                    borderColor: 'rgb(201, 203, 207)',
+                    borderWidth: 1
+                }],
+                'Number of Calls'
+            );
+        }
+        
+        function prepareChartData(aggregateData) {
+            const chartData = {
+                labels: [],
+                serverTimingData: [],
+                serverTimingError: [],
+                clientTimingData: [],
+                clientTimingError: [],
+                memoryAllocData: [],
+                heapInUseData: [],
+                readCallsData: [],
+                writeCallsData: [],
+                totalCallsData: []
+            };
+            
+            // Sort by execution path and buffer size
+            const sortedKeys = Object.keys(aggregateData).sort((a, b) => {
+                const [execA, bufA] = a.split('_');
+                const [execB, bufB] = b.split('_');
+                
+                // Order: NOBUFFER, BUFIOREADER, PRELOAD
+                const order = { 'NOBUFFER': 1, 'BUFIOREADER': 2, 'PRELOAD': 3 };
+                if (execA !== execB) {
+                    return order[execA] - order[execB];
+                }
+                
+                return parseInt(bufA) - parseInt(bufB);
+            });
+            
+            for (const key of sortedKeys) {
+                const stats = aggregateData[key];
+                
+                let label = stats.executionPath;
+                if (stats.executionPath === 'BUFIOREADER') {
+                    const bufferSizeStr = formatBufferSize(stats.bufferSize);
+                    label += ' (' + bufferSizeStr + ')';
+                }
+                chartData.labels.push(label);
+                
+                chartData.serverTimingData.push(stats.avgServerTime);
+                chartData.serverTimingError.push(stats.stdDevServer);
+                
+                chartData.clientTimingData.push(stats.avgClientTime);
+                chartData.clientTimingError.push(stats.stdDevClient);
+                
+                chartData.memoryAllocData.push(stats.avgMemoryAlloc);
+                chartData.heapInUseData.push(stats.avgHeapInUse);
+                
+                chartData.readCallsData.push(stats.avgReadCalls);
+                chartData.writeCallsData.push(stats.avgWriteCalls);
+                chartData.totalCallsData.push(stats.avgTotalCalls);
+            }
+            
+            return chartData;
+        }
+        
+        function createBarChart(canvasId, title, labels, datasets, yAxisLabel) {
+            return new Chart(
+                document.getElementById(canvasId),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: title
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
+                            },
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: yAxisLabel
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+        
+        function formatBufferSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+        }
+    </script>
+</body>
+</html>
