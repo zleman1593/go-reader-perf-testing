@@ -1,0 +1,24 @@
+a simple go program that does the following:
+It will be a learning tool that helps illustrate how buffered readers and writers work and perform compared to nobufio readers and writers. 
+
+It will start a very simple HTTP server. I will be using curl to interact with the server. When it is curled the file from the source path will be downloaded by the curl command.  
+
+It takes arguments:
+Source file path
+Port
+Buffer size bytes (only relevant for BUFIOREADER execution)
+Execution path enum with values:
+NOBUFFER
+BUFIOREADER
+PRELOAD
+
+For NOBUFFER there should be no buffered readers used before the file is written to the final httpWritter 
+
+BUFIOREADER can use a bufioreader to read the file and transfer the content to the httpWritter.
+
+PRELOAD
+Will load the file into memory completely when the program starts and quickly be able to push its content to the httpWritter.
+
+Make sure to add timers that log out for critical blocks of code for learning purposes.
+
+Add useful comments in the code to explain any behind the scenes functionality. For example what the httpWritter is doing and if it has any buffers
