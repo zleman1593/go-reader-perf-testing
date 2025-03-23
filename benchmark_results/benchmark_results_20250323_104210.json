@@ -1,0 +1,396 @@
+{
+  "config": {
+    "SourceFile": "/Users/zackleman/Downloads/obsidian.dmg",
+    "Port": 8082,
+    "Runs": 2,
+    "BufferSizes": [
+      1024,
+      8192,
+      65536,
+      1048576
+    ],
+    "OutputDirectory": "benchmark_results"
+  },
+  "rawResults": [
+    {
+      "executionPath": "NOBUFFER",
+      "bufferSize": 0,
+      "runId": 1,
+      "serverTiming": 174,
+      "clientTiming": 183.094,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 6,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:38:35.195583-07:00"
+    },
+    {
+      "executionPath": "NOBUFFER",
+      "bufferSize": 0,
+      "runId": 2,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:38:40.433843-07:00"
+    },
+    {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 1024,
+      "runId": 1,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:38:59.56119-07:00"
+    },
+    {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 1024,
+      "runId": 2,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:39:18.685842-07:00"
+    },
+    {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 8192,
+      "runId": 1,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:39:37.804195-07:00"
+    },
+    {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 8192,
+      "runId": 2,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:39:56.915191-07:00"
+    },
+    {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 65536,
+      "runId": 1,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:40:16.061515-07:00"
+    },
+    {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 65536,
+      "runId": 2,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:40:35.206174-07:00"
+    },
+    {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 1048576,
+      "runId": 1,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:40:54.310092-07:00"
+    },
+    {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 1048576,
+      "runId": 2,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:41:13.428413-07:00"
+    },
+    {
+      "executionPath": "PRELOAD",
+      "bufferSize": 0,
+      "runId": 1,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:41:32.521539-07:00"
+    },
+    {
+      "executionPath": "PRELOAD",
+      "bufferSize": 0,
+      "runId": 2,
+      "serverTiming": 0,
+      "clientTiming": 0,
+      "memoryUsage": {
+        "allocMiB": 0,
+        "totalAlloc": 0,
+        "sysMiB": 0,
+        "numGC": 0,
+        "maxHeapMiB": 0,
+        "heapInUseMiB": 0
+      },
+      "systemCalls": {
+        "readCalls": 0,
+        "writeCalls": 0,
+        "totalCalls": 0
+      },
+      "timestamp": "2025-03-23T10:41:51.643025-07:00"
+    }
+  ],
+  "aggregateData": {
+    "BUFIOREADER_1024": {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 1024,
+      "numRuns": 2,
+      "avgServerTime": 0,
+      "minServerTime": 0,
+      "maxServerTime": 0,
+      "stdDevServer": 0,
+      "avgClientTime": 0,
+      "minClientTime": 0,
+      "maxClientTime": 0,
+      "stdDevClient": 0,
+      "avgMemoryAlloc": 0,
+      "maxMemoryAlloc": 0,
+      "avgHeapInUse": 0,
+      "maxHeapInUse": 0,
+      "avgReadCalls": 0,
+      "avgWriteCalls": 0,
+      "avgTotalCalls": 0,
+      "maxTotalCalls": 0
+    },
+    "BUFIOREADER_1048576": {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 1048576,
+      "numRuns": 2,
+      "avgServerTime": 0,
+      "minServerTime": 0,
+      "maxServerTime": 0,
+      "stdDevServer": 0,
+      "avgClientTime": 0,
+      "minClientTime": 0,
+      "maxClientTime": 0,
+      "stdDevClient": 0,
+      "avgMemoryAlloc": 0,
+      "maxMemoryAlloc": 0,
+      "avgHeapInUse": 0,
+      "maxHeapInUse": 0,
+      "avgReadCalls": 0,
+      "avgWriteCalls": 0,
+      "avgTotalCalls": 0,
+      "maxTotalCalls": 0
+    },
+    "BUFIOREADER_65536": {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 65536,
+      "numRuns": 2,
+      "avgServerTime": 0,
+      "minServerTime": 0,
+      "maxServerTime": 0,
+      "stdDevServer": 0,
+      "avgClientTime": 0,
+      "minClientTime": 0,
+      "maxClientTime": 0,
+      "stdDevClient": 0,
+      "avgMemoryAlloc": 0,
+      "maxMemoryAlloc": 0,
+      "avgHeapInUse": 0,
+      "maxHeapInUse": 0,
+      "avgReadCalls": 0,
+      "avgWriteCalls": 0,
+      "avgTotalCalls": 0,
+      "maxTotalCalls": 0
+    },
+    "BUFIOREADER_8192": {
+      "executionPath": "BUFIOREADER",
+      "bufferSize": 8192,
+      "numRuns": 2,
+      "avgServerTime": 0,
+      "minServerTime": 0,
+      "maxServerTime": 0,
+      "stdDevServer": 0,
+      "avgClientTime": 0,
+      "minClientTime": 0,
+      "maxClientTime": 0,
+      "stdDevClient": 0,
+      "avgMemoryAlloc": 0,
+      "maxMemoryAlloc": 0,
+      "avgHeapInUse": 0,
+      "maxHeapInUse": 0,
+      "avgReadCalls": 0,
+      "avgWriteCalls": 0,
+      "avgTotalCalls": 0,
+      "maxTotalCalls": 0
+    },
+    "NOBUFFER_0": {
+      "executionPath": "NOBUFFER",
+      "bufferSize": 0,
+      "numRuns": 2,
+      "avgServerTime": 87,
+      "minServerTime": 0,
+      "maxServerTime": 174,
+      "stdDevServer": 7569,
+      "avgClientTime": 91.547,
+      "minClientTime": 0,
+      "maxClientTime": 183.094,
+      "stdDevClient": 8380.85,
+      "avgMemoryAlloc": 0,
+      "maxMemoryAlloc": 0,
+      "avgHeapInUse": 0,
+      "maxHeapInUse": 0,
+      "avgReadCalls": 0,
+      "avgWriteCalls": 0,
+      "avgTotalCalls": 0,
+      "maxTotalCalls": 0
+    },
+    "PRELOAD_0": {
+      "executionPath": "PRELOAD",
+      "bufferSize": 0,
+      "numRuns": 2,
+      "avgServerTime": 0,
+      "minServerTime": 0,
+      "maxServerTime": 0,
+      "stdDevServer": 0,
+      "avgClientTime": 0,
+      "minClientTime": 0,
+      "maxClientTime": 0,
+      "stdDevClient": 0,
+      "avgMemoryAlloc": 0,
+      "maxMemoryAlloc": 0,
+      "avgHeapInUse": 0,
+      "maxHeapInUse": 0,
+      "avgReadCalls": 0,
+      "avgWriteCalls": 0,
+      "avgTotalCalls": 0,
+      "maxTotalCalls": 0
+    }
+  }
+}

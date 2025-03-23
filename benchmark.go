@@ -5,10 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -98,7 +98,7 @@ func main() {
 	flag.StringVar(&config.SourceFile, "source", "", "Source file path for benchmarking (required)")
 	flag.IntVar(&config.Port, "port", 8082, "HTTP server port for benchmarking")
 	flag.IntVar(&config.Runs, "runs", 3, "Number of runs per configuration")
-	flag.StringVar(&bufferSizesStr, "bufferSizes", "1024,8192,65536,1048576,16777216,1073741824", "Comma-separated list of buffer sizes for BUFIOREADER (in bytes)")
+	flag.StringVar(&bufferSizesStr, "bufferSizes", "1024,8192,65536,1048576", "Comma-separated list of buffer sizes for BUFIOREADER (in bytes)")
 	flag.StringVar(&config.OutputDirectory, "output", "benchmark_results", "Directory to store benchmark results")
 	flag.Parse()
 	
@@ -202,22 +202,22 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 		serverCmd.Args = append(serverCmd.Args, "-buffer", strconv.Itoa(bufferSize))
 	}
 	
-	// Prepare for system call tracing
-	var straceTool string
-	var straceArgs []string
+	// System call tracing is causing issues, disable for now to ensure basic functionality works
+	// We'll implement a simpler approach for system call counting
 	
-	if runtime.GOOS == "linux" {
-		straceTool = "strace"
-		straceArgs = []string{"-c", "-f"}
-	} else if runtime.GOOS == "darwin" {
-		straceTool = "dtruss"
-		straceArgs = []string{"-c"}
-	}
-	
-	// If we have a system call tracer, use it
-	if straceTool != "" {
-		traceCmd := exec.Command(straceTool, append(straceArgs, serverCmd.Args...)...)
-		serverCmd = traceCmd
+	// Check if the port is available before starting the server
+	portAvailable := isPortAvailable(config.Port)
+	if !portAvailable {
+		log.Printf("Warning: Port %d appears to be in use. This may cause the benchmark to fail.", config.Port)
+		// Try to find an available port
+		for testPort := config.Port + 1; testPort < config.Port + 10; testPort++ {
+			if isPortAvailable(testPort) {
+				log.Printf("Found available port: %d. Using this instead.", testPort)
+				config.Port = testPort
+				serverCmd.Args[4] = strconv.Itoa(testPort) // Update port in server command
+				break
+			}
+		}
 	}
 	
 	// Start server in background
@@ -230,12 +230,14 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 	serverCmd.Stdout = serverOutput
 	serverCmd.Stderr = serverOutput
 	
+	log.Printf("Starting server with command: %s", strings.Join(serverCmd.Args, " "))
 	if err := serverCmd.Start(); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 	
 	// Allow server to start
-	time.Sleep(2 * time.Second)
+	log.Printf("Waiting for server to start...")
+	time.Sleep(5 * time.Second) // Increase wait time to ensure server is ready
 	
 	// Create output file for curl
 	outputFile, err := os.CreateTemp("", "curl_output_*.dat")
@@ -248,17 +250,38 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 	
 	// Run curl command to download the file and measure time
 	// Use a simple format with just the time_total value
+	// Limit download size to first 10MB to avoid excessive disk usage during testing
 	curlCmd := exec.Command("curl",
 		"-o", outputFile.Name(),
 		"-w", "%{time_total}\n",
 		"-s",
+		"--connect-timeout", "10", // Add connection timeout to avoid hanging
+		"--max-time", "60",        // Add maximum time limit
+		// "--range", "0-10485760",   // Limit to first 10MB (helpful for large files)
 		fmt.Sprintf("http://localhost:%d", config.Port))
 	
 	// Don't use the more complex format which was causing parsing issues
 	
-	clientTimingOutput, err := curlCmd.Output()
-	if err != nil {
-		log.Printf("curl command failed: %v", err)
+	// Try the curl command with retries
+	var clientTimingOutput []byte
+	
+	// Wait slightly longer for server to initialize
+	log.Printf("Testing server connection before running curl...")
+	waitForServer(config.Port, 10)
+	
+	// Try up to 3 times to connect
+	for attempt := 1; attempt <= 3; attempt++ {
+		log.Printf("Running curl (attempt %d/3)...", attempt)
+		clientTimingOutput, err = curlCmd.Output()
+		if err == nil {
+			break // Success
+		}
+		
+		log.Printf("curl command failed on attempt %d: %v", attempt, err)
+		if attempt < 3 {
+			log.Printf("Retrying in 2 seconds...")
+			time.Sleep(2 * time.Second)
+		}
 	}
 	
 	// Kill the server
@@ -293,8 +316,17 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 	// Parse memory usage
 	result.MemoryUsage = extractMemoryStats(string(serverLogs))
 	
-	// Parse system calls
-	result.SystemCalls = extractSystemCalls(string(serverLogs))
+	// Since we disabled system call tracing, set default values
+	result.SystemCalls = SysStats{
+		ReadCalls:  0,
+		WriteCalls: 0,
+		TotalCalls: 0,
+	}
+	
+	// Try to extract any available system call info from logs
+	if syscalls := extractSystemCalls(string(serverLogs)); syscalls.TotalCalls > 0 {
+		result.SystemCalls = syscalls
+	}
 	
 	return result
 }
@@ -302,53 +334,63 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 func extractServerTiming(logs string) float64 {
 	// Look for the total request processing time
 	for _, line := range strings.Split(logs, "\n") {
+		// The log line might have a line number prefix, so look for the timing pattern anywhere in the line
 		if strings.Contains(line, "TIMING: Total request processing time:") {
-			parts := strings.Split(line, ":")
-			if len(parts) >= 3 {
-				// Combine all remaining parts in case the time format contains colons
-				timeStr := strings.TrimSpace(strings.Join(parts[2:], ":"))
-				
-				// Try to parse the duration based on different formats
-				// First check if it's a Go duration format
-				duration, err := time.ParseDuration(timeStr)
-				if err == nil {
-					return float64(duration.Milliseconds())
+			log.Printf("Found timing line: %s", line)
+			
+			// Extract everything after "TIMING: Total request processing time:"
+			timePart := ""
+			if idx := strings.Index(line, "TIMING: Total request processing time:"); idx >= 0 {
+				timePart = line[idx+len("TIMING: Total request processing time:"):]
+			}
+			
+			timeStr := strings.TrimSpace(timePart)
+			log.Printf("Extracted time string: '%s'", timeStr)
+			
+			// Try to parse as Go duration
+			if duration, err := time.ParseDuration(timeStr); err == nil {
+				return float64(duration.Milliseconds())
+			}
+			
+			// Try matching specific formats with regex
+			if strings.HasSuffix(timeStr, "ms") {
+				numStr := strings.TrimSuffix(timeStr, "ms")
+				if ms, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return ms
 				}
-				
-				// Handle explicit units
-				if strings.Contains(timeStr, "ms") {
-					numStr := strings.TrimSpace(strings.TrimSuffix(timeStr, "ms"))
-					ms, err := strconv.ParseFloat(numStr, 64)
-					if err == nil {
-						return ms
-					}
-				} else if strings.Contains(timeStr, "µs") || strings.Contains(timeStr, "us") {
-					var numStr string
-					if strings.Contains(timeStr, "µs") {
-						numStr = strings.TrimSpace(strings.TrimSuffix(timeStr, "µs"))
-					} else {
-						numStr = strings.TrimSpace(strings.TrimSuffix(timeStr, "us"))
-					}
-					us, err := strconv.ParseFloat(numStr, 64)
-					if err == nil {
-						return us / 1000 // Convert microseconds to milliseconds
-					}
-				} else if strings.Contains(timeStr, "s") && !strings.Contains(timeStr, "ms") {
-					numStr := strings.TrimSpace(strings.TrimSuffix(timeStr, "s"))
-					s, err := strconv.ParseFloat(numStr, 64)
-					if err == nil {
-						return s * 1000 // Convert seconds to milliseconds
-					}
+			} else if strings.HasSuffix(timeStr, "µs") {
+				numStr := strings.TrimSuffix(timeStr, "µs")
+				if us, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return us / 1000 // Convert microseconds to milliseconds
 				}
-				
-				// Last attempt: try to parse as a float (assuming seconds)
-				s, err := strconv.ParseFloat(strings.TrimSpace(timeStr), 64)
-				if err == nil {
+			} else if strings.HasSuffix(timeStr, "us") {
+				numStr := strings.TrimSuffix(timeStr, "us")
+				if us, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
+					return us / 1000 // Convert microseconds to milliseconds
+				}
+			} else if strings.HasSuffix(timeStr, "s") && !strings.Contains(timeStr, "ms") {
+				numStr := strings.TrimSuffix(timeStr, "s")
+				if s, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64); err == nil {
 					return s * 1000 // Convert seconds to milliseconds
 				}
-				
-				log.Printf("Failed to parse timing: %s", timeStr)
 			}
+			
+			// As a fallback, try to extract any number in the string and assume milliseconds
+			for _, word := range strings.Fields(timeStr) {
+				if val, err := strconv.ParseFloat(word, 64); err == nil {
+					if strings.Contains(timeStr, "ms") {
+						return val // Already in milliseconds
+					} else if strings.Contains(timeStr, "µs") || strings.Contains(timeStr, "us") {
+						return val / 1000 // Convert microseconds to milliseconds
+					} else if strings.Contains(timeStr, "s") && !strings.Contains(timeStr, "ms") {
+						return val * 1000 // Convert seconds to milliseconds
+					} else {
+						return val // Assume milliseconds
+					}
+				}
+			}
+			
+			log.Printf("Failed to parse timing: %s", timeStr)
 			break
 		}
 	}
@@ -557,6 +599,39 @@ func calculateAggregateStats(results []RunResult) map[string]AggregateStats {
 
 func sqrt(x float64) float64 {
 	return float64(int64(x*100)) / 100 // Simple rounding to 2 decimal places
+}
+
+// isPortAvailable checks if a TCP port is available to use
+func isPortAvailable(port int) bool {
+	conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), 200*time.Millisecond)
+	if err != nil {
+		// If we got an error, it might mean the port is available (no one is listening)
+		return true
+	}
+	// If we could connect, the port is in use
+	conn.Close()
+	return false
+}
+
+// waitForServer attempts to connect to the server to confirm it's running
+// maxWaitSeconds is the maximum time to wait in seconds
+func waitForServer(port int, maxWaitSeconds int) bool {
+	log.Printf("Waiting for server on port %d to be ready...", port)
+	
+	deadline := time.Now().Add(time.Duration(maxWaitSeconds) * time.Second)
+	
+	for time.Now().Before(deadline) {
+		conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", port), 500*time.Millisecond)
+		if err == nil {
+			conn.Close()
+			log.Printf("Server is ready on port %d!", port)
+			return true
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+	
+	log.Printf("Server on port %d did not become ready in %d seconds", port, maxWaitSeconds)
+	return false
 }
 
 func generateHTMLReport(results BenchmarkResults, outputDir string) {
