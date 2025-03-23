@@ -210,13 +210,30 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 	if !portAvailable {
 		log.Printf("Warning: Port %d appears to be in use. This may cause the benchmark to fail.", config.Port)
 		// Try to find an available port
-		for testPort := config.Port + 1; testPort < config.Port + 10; testPort++ {
+		portFound := false
+		for testPort := config.Port + 1; testPort < config.Port + 100; testPort++ {
 			if isPortAvailable(testPort) {
 				log.Printf("Found available port: %d. Using this instead.", testPort)
+				
+				// Recreate the server command with the new port
+				serverCmd = exec.Command("go", "run", "main.go", 
+					"-source", config.SourceFile,
+					"-port", strconv.Itoa(testPort),
+					"-exec", execPath)
+				
+				if execPath == "BUFIOREADER" {
+					serverCmd.Args = append(serverCmd.Args, "-buffer", strconv.Itoa(bufferSize))
+				}
+				
+				// Update the port in the config for curl
 				config.Port = testPort
-				serverCmd.Args[4] = strconv.Itoa(testPort) // Update port in server command
+				portFound = true
 				break
 			}
+		}
+		
+		if !portFound {
+			log.Printf("Could not find an available port. Will try to use port %d anyway.", config.Port)
 		}
 	}
 	
@@ -269,19 +286,11 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 	log.Printf("Testing server connection before running curl...")
 	waitForServer(config.Port, 10)
 	
-	// Try up to 3 times to connect
-	for attempt := 1; attempt <= 3; attempt++ {
-		log.Printf("Running curl (attempt %d/3)...", attempt)
-		clientTimingOutput, err = curlCmd.Output()
-		if err == nil {
-			break // Success
-		}
-		
-		log.Printf("curl command failed on attempt %d: %v", attempt, err)
-		if attempt < 3 {
-			log.Printf("Retrying in 2 seconds...")
-			time.Sleep(2 * time.Second)
-		}
+	// Only try once now that we have better port handling
+	log.Printf("Running curl...")
+	clientTimingOutput, err = curlCmd.Output()
+	if err != nil {
+		log.Printf("curl command failed: %v", err)
 	}
 	
 	// Kill the server
@@ -291,6 +300,10 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 	
 	// Wait for the server to exit
 	serverCmd.Wait()
+	
+	// Wait a bit to ensure the port is released
+	log.Printf("Waiting for port to be released...")
+	time.Sleep(2 * time.Second)
 	
 	// Read server logs
 	serverOutput.Seek(0, 0)

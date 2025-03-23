@@ -192,12 +192,17 @@
         function displayBenchmarkData(benchmarkData) {
             // Display benchmark info
             const infoDiv = document.getElementById('benchmarkInfo');
+            // Safe access to buffer sizes with fallback
+            const bufferSizeDisplay = benchmarkData.config.bufferSizes && Array.isArray(benchmarkData.config.bufferSizes) 
+                ? benchmarkData.config.bufferSizes.map(formatBufferSize).join(', ')
+                : 'Not specified';
+                
             infoDiv.innerHTML = `
                 <h2>Benchmark Information</h2>
-                <p><strong>Source File:</strong> ${benchmarkData.config.sourceFile}</p>
-                <p><strong>Runs per Configuration:</strong> ${benchmarkData.config.runs}</p>
-                <p><strong>Port:</strong> ${benchmarkData.config.port}</p>
-                <p><strong>Buffer Sizes Tested:</strong> ${benchmarkData.config.bufferSizes.map(formatBufferSize).join(', ')}</p>
+                <p><strong>Source File:</strong> ${benchmarkData.config.sourceFile || 'Unknown'}</p>
+                <p><strong>Runs per Configuration:</strong> ${benchmarkData.config.runs || 'Unknown'}</p>
+                <p><strong>Port:</strong> ${benchmarkData.config.port || 'Unknown'}</p>
+                <p><strong>Buffer Sizes Tested:</strong> ${bufferSizeDisplay}</p>
             `;
             
             // Clear tables
@@ -507,10 +512,18 @@
         }
         
         function formatBufferSize(bytes) {
-            if (bytes < 1024) return bytes + ' B';
-            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-            return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+            // Handle undefined or non-numeric values
+            if (bytes === undefined || bytes === null || isNaN(bytes)) {
+                return 'N/A';
+            }
+            
+            // Convert string to number if needed
+            const numBytes = typeof bytes === 'string' ? parseInt(bytes, 10) : bytes;
+            
+            if (numBytes < 1024) return numBytes + ' B';
+            if (numBytes < 1024 * 1024) return (numBytes / 1024).toFixed(1) + ' KB';
+            if (numBytes < 1024 * 1024 * 1024) return (numBytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (numBytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
         }
     </script>
 </body>
