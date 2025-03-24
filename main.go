@@ -103,6 +103,41 @@ func logSyscalls() {
 		readCalls, writeCalls, readCalls+writeCalls)
 }
 
+// setupGracefulShutdown configures signal handling for proper server termination
+func setupGracefulShutdown() {
+	// Initialize the shutdown channel
+	shutdownChan = make(chan struct{})
+	
+	// Create a channel to listen for OS signals
+	sigChan := make(chan os.Signal, 1)
+	
+	// Register for SIGINT (Ctrl+C), SIGTERM, and SIGHUP
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	
+	// Launch a goroutine to handle the signals
+	go func() {
+		sig := <-sigChan
+		log.Printf("Received signal: %v, initiating graceful shutdown", sig)
+		
+		// Create a timeout context for the shutdown
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		
+		// Attempt graceful shutdown of the server
+		if server != nil {
+			if err := server.Shutdown(ctx); err != nil {
+				log.Printf("Error during server shutdown: %v", err)
+			}
+		} else {
+			// If server doesn't exist, just close the channel
+			close(shutdownChan)
+		}
+		
+		// Log exit
+		log.Printf("Server shutdown completed. Exiting.")
+	}()
+}
+
 func main() {
 	// Parse and validate command line arguments
 	flag.StringVar(&sourceFilePath, "source", "", "Source file path")
@@ -179,7 +214,7 @@ func main() {
 	log.Printf("Use: curl http://localhost%s -o output.file", serverAddr)
 	
 	// Create a custom server for better shutdown control
-	server := &http.Server{
+	server = &http.Server{
 		Addr:    serverAddr,
 		Handler: nil, // Use the default ServeMux
 	}
@@ -187,12 +222,15 @@ func main() {
 	// Start the server in a goroutine
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server error: %v", err)
+			log.Printf("Server error: %v", err)
 		}
+		log.Printf("Server has shut down")
+		
+		// Signal that server has shut down
+		close(shutdownChan)
 	}()
 	
 	// Block until shutdown signal received
-	shutdownChan := make(chan struct{})
 	<-shutdownChan
 }
 

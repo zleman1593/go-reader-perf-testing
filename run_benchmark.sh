@@ -98,3 +98,21 @@ go run benchmark.go \
 echo ""
 echo "Benchmark complete! Results saved to $OUTPUT_DIR"
 echo "Open report.html in a web browser to visualize the results"
+
+# Final cleanup to ensure no stray server processes are left running
+echo "Performing final cleanup of any lingering processes..."
+# Find and kill any Go processes that might be running on ports in the range we used
+for p in $(seq $PORT $(($PORT+20))); do
+    if lsof -i :$p -t 2>/dev/null; then
+        echo "Found lingering process on port $p, cleaning up..."
+        lsof -i :$p -t | xargs -r kill -9
+    fi
+done
+
+# Also look for any 'main.go' processes that might be running
+if pgrep -f "go.*main.go" >/dev/null; then
+    echo "Found lingering main.go process, cleaning up..."
+    pkill -9 -f "go.*main.go"
+fi
+
+echo "Cleanup complete."
