@@ -33,6 +33,10 @@ var (
 	bufferSizeBytes int    // Size of buffer for BUFIOREADER mode
 	executionPath   string // Which execution strategy to use
 	preloadedData   []byte // In-memory storage for PRELOAD mode
+	
+	// System call stats
+	readCalls  int // Count of read operations
+	writeCalls int // Count of write operations
 )
 
 // logMemUsage outputs the current memory statistics
@@ -50,6 +54,50 @@ func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
 }
 
+// CountingReader wraps an io.Reader and counts read operations
+type CountingReader struct {
+	reader io.Reader
+}
+
+func (cr *CountingReader) Read(p []byte) (n int, err error) {
+	n, err = cr.reader.Read(p)
+	if n > 0 {
+		// Only count successful reads
+		incrementReadCalls()
+	}
+	return n, err
+}
+
+// CountingWriter wraps an io.Writer and counts write operations
+type CountingWriter struct {
+	writer io.Writer
+}
+
+func (cw *CountingWriter) Write(p []byte) (n int, err error) {
+	n, err = cw.writer.Write(p)
+	if n > 0 {
+		// Only count successful writes
+		incrementWriteCalls()
+	}
+	return n, err
+}
+
+// incrementReadCalls atomically increments the read calls counter
+func incrementReadCalls() {
+	readCalls++
+}
+
+// incrementWriteCalls atomically increments the write calls counter
+func incrementWriteCalls() {
+	writeCalls++
+}
+
+// logSyscalls outputs the current system call statistics
+func logSyscalls() {
+	log.Printf("SYSCALLS: Read = %d, Write = %d, Total = %d",
+		readCalls, writeCalls, readCalls+writeCalls)
+}
+
 func main() {
 	// Parse and validate command line arguments
 	flag.StringVar(&sourceFilePath, "source", "", "Source file path")
@@ -57,6 +105,10 @@ func main() {
 	flag.IntVar(&bufferSizeBytes, "buffer", 4096, "Buffer size in bytes (only relevant for BUFIOREADER)")
 	flag.StringVar(&executionPath, "exec", string(NOBUFFER), "Execution path: NOBUFFER, BUFIOREADER, PRELOAD")
 	flag.Parse()
+	
+	// Reset system call counters for this run
+	readCalls = 0
+	writeCalls = 0
 
 	if sourceFilePath == "" {
 		log.Fatalf("Source file path is required")
@@ -77,9 +129,19 @@ func main() {
 	if ExecutionPath(executionPath) == PRELOAD {
 		startTime := time.Now()
 		
-		// os.ReadFile reads the entire file into memory at once
+		// Open the file for reading and count system calls
+		file, err := os.Open(sourceFilePath)
+		if err != nil {
+			log.Fatalf("Failed to open file for preloading: %v", err)
+		}
+		defer file.Close()
+		
+		// Create a counting reader
+		countingReader := &CountingReader{reader: file}
+		
+		// Read the entire file into memory at once
 		// This is efficient for subsequent requests but uses more memory
-		preloadedData, err = os.ReadFile(sourceFilePath)
+		preloadedData, err = io.ReadAll(countingReader)
 		if err != nil {
 			log.Fatalf("Failed to preload file: %v", err)
 		}
@@ -174,6 +236,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	
 	// Log total request processing time
 	log.Printf("TIMING: Total request processing time: %v", time.Since(requestStartTime))
+	
+	// Log system call statistics
+	logSyscalls()
 }
 
 func serveWithNoBuffer(w http.ResponseWriter) {
@@ -206,11 +271,17 @@ func serveWithNoBuffer(w http.ResponseWriter) {
 	openDuration := time.Since(startTime)
 	log.Printf("TIMING: Opened file in %v", openDuration)
 
+	// Create a counting reader to track read system calls
+	countingReader := &CountingReader{reader: file}
+	
+	// Create a counting writer to track write system calls
+	countingWriter := &CountingWriter{writer: w}
+	
 	// Copy file directly to the HTTP response writer
 	// Although we're using no explicit buffer, io.Copy uses a 32KB
 	// internal buffer by default when copying
 	startTime = time.Now()
-	bytesWritten, err := io.Copy(w, file)
+	bytesWritten, err := io.Copy(countingWriter, countingReader)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to write file: %v", err), http.StatusInternalServerError)
 		return
@@ -256,15 +327,21 @@ func serveWithBufioReader(w http.ResponseWriter) {
 	openDuration := time.Since(startTime)
 	log.Printf("TIMING: Opened file in %v", openDuration)
 
+	// Create a counting reader to track the underlying file reads 
+	countingFile := &CountingReader{reader: file}
+	
 	// Create a buffered reader with specified buffer size
 	// The bufio.Reader will read data in chunks of bufferSizeBytes from the file
 	startTime = time.Now()
-	reader := bufio.NewReaderSize(file, bufferSizeBytes)
+	reader := bufio.NewReaderSize(countingFile, bufferSizeBytes)
+	
+	// Create a counting writer to track write system calls
+	countingWriter := &CountingWriter{writer: w}
 	
 	// Copy data to response writer using the buffered reader
 	// Note: io.Copy has its own internal buffer, but it will use the
 	// bufio.Reader's buffer when reading from it, avoiding double buffering
-	bytesWritten, err := io.Copy(w, reader)
+	bytesWritten, err := io.Copy(countingWriter, reader)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to write file: %v", err), http.StatusInternalServerError)
 		return
@@ -299,10 +376,13 @@ func serveWithPreloadedData(w http.ResponseWriter) {
 	   - When response time is critical
 	*/
 	
+	// Create a counting writer to track write system calls
+	countingWriter := &CountingWriter{writer: w}
+	
 	// Simply write the preloaded data to the response
 	// This is the fastest method as the data is already in memory
 	startTime := time.Now()
-	bytesWritten, err := w.Write(preloadedData)
+	bytesWritten, err := countingWriter.Write(preloadedData)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to write data: %v", err), http.StatusInternalServerError)
 		return

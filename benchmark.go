@@ -476,35 +476,52 @@ func extractMemoryStats(logs string) MemStats {
 func extractSystemCalls(logs string) SysStats {
 	var stats SysStats
 	
-	// Look for strace or dtruss output
-	inSyscallSection := false
-	
+	// Look for our custom SYSCALLS logging line
 	for _, line := range strings.Split(logs, "\n") {
-		if strings.Contains(line, "syscall") && strings.Contains(line, "calls") {
-			inSyscallSection = true
-			continue
-		}
-		
-		if inSyscallSection {
-			fields := strings.Fields(line)
-			if len(fields) < 2 {
-				continue
+		if strings.Contains(line, "SYSCALLS: Read =") {
+			log.Printf("Found syscalls line: %s", line)
+			
+			// Parse read calls
+			readStart := strings.Index(line, "Read = ")
+			if readStart >= 0 {
+				readPart := line[readStart+len("Read = "):]
+				readEnd := strings.Index(readPart, ",")
+				if readEnd >= 0 {
+					readStr := readPart[:readEnd]
+					if readCount, err := strconv.Atoi(strings.TrimSpace(readStr)); err == nil {
+						stats.ReadCalls = readCount
+					}
+				}
 			}
 			
-			syscallName := fields[len(fields)-1]
-			countStr := fields[0]
-			count, err := strconv.Atoi(countStr)
-			if err != nil {
-				continue
+			// Parse write calls
+			writeStart := strings.Index(line, "Write = ")
+			if writeStart >= 0 {
+				writePart := line[writeStart+len("Write = "):]
+				writeEnd := strings.Index(writePart, ",")
+				if writeEnd >= 0 {
+					writeStr := writePart[:writeEnd]
+					if writeCount, err := strconv.Atoi(strings.TrimSpace(writeStr)); err == nil {
+						stats.WriteCalls = writeCount
+					}
+				}
 			}
 			
-			if strings.Contains(syscallName, "read") {
-				stats.ReadCalls += count
-			} else if strings.Contains(syscallName, "write") {
-				stats.WriteCalls += count
+			// Parse total calls (or calculate from read + write)
+			totalStart := strings.Index(line, "Total = ")
+			if totalStart >= 0 {
+				totalPart := line[totalStart+len("Total = "):]
+				if totalCount, err := strconv.Atoi(strings.TrimSpace(totalPart)); err == nil {
+					stats.TotalCalls = totalCount
+				} else {
+					stats.TotalCalls = stats.ReadCalls + stats.WriteCalls
+				}
+			} else {
+				stats.TotalCalls = stats.ReadCalls + stats.WriteCalls
 			}
 			
-			stats.TotalCalls += count
+			// We found and parsed the line, so we can return
+			return stats
 		}
 	}
 	
