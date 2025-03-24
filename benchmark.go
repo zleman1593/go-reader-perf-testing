@@ -293,17 +293,46 @@ func benchmarkExecution(execPath string, bufferSize int, config BenchmarkConfig,
 		log.Printf("curl command failed: %v", err)
 	}
 	
-	// Kill the server
-	if err := serverCmd.Process.Kill(); err != nil {
-		log.Printf("Failed to kill server: %v", err)
+	// Kill the server and ensure cleanup
+	log.Printf("Stopping server process...")
+	
+	// First try a graceful termination
+	if err := serverCmd.Process.Signal(os.Interrupt); err != nil {
+		log.Printf("Failed to send interrupt signal: %v, trying hard kill", err)
+		if err := serverCmd.Process.Kill(); err != nil {
+			log.Printf("Failed to kill server: %v", err)
+		}
 	}
 	
-	// Wait for the server to exit
-	serverCmd.Wait()
+	// Wait for the server to exit with timeout
+	doneChan := make(chan error, 1)
+	go func() {
+		doneChan <- serverCmd.Wait()
+	}()
 	
-	// Wait a bit to ensure the port is released
+	// Wait for process to exit or timeout
+	select {
+	case <-doneChan:
+		log.Printf("Server process exited normally")
+	case <-time.After(3 * time.Second):
+		log.Printf("Server process didn't exit in time, forcing kill")
+		if err := serverCmd.Process.Kill(); err != nil {
+			log.Printf("Failed to force kill server: %v", err)
+		}
+	}
+	
+	// Additional cleanup: find and kill any lingering go processes on this port
+	cleanupCmd := exec.Command("bash", "-c", 
+		fmt.Sprintf("lsof -i :%d -t | xargs -r kill -9", config.Port))
+	if cleanupOutput, err := cleanupCmd.CombinedOutput(); err != nil {
+		log.Printf("Port cleanup may have failed: %v, output: %s", err, string(cleanupOutput))
+	} else {
+		log.Printf("Additional port cleanup completed")
+	}
+	
+	// Wait a bit longer to ensure the port is released
 	log.Printf("Waiting for port to be released...")
-	time.Sleep(2 * time.Second)
+	time.Sleep(3 * time.Second)
 	
 	// Read server logs
 	serverOutput.Seek(0, 0)

@@ -2,14 +2,17 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"syscall"
 	"time"
 )
 
@@ -28,11 +31,13 @@ const (
 )
 
 var (
-	sourceFilePath  string // Path to file that will be served
-	port            int    // HTTP server port
-	bufferSizeBytes int    // Size of buffer for BUFIOREADER mode
-	executionPath   string // Which execution strategy to use
-	preloadedData   []byte // In-memory storage for PRELOAD mode
+	sourceFilePath  string        // Path to file that will be served
+	port            int           // HTTP server port
+	bufferSizeBytes int           // Size of buffer for BUFIOREADER mode
+	executionPath   string        // Which execution strategy to use
+	preloadedData   []byte        // In-memory storage for PRELOAD mode
+	server          *http.Server  // Global server reference for shutdown
+	shutdownChan    chan struct{} // Channel for signaling server shutdown
 	
 	// System call stats
 	readCalls  int // Count of read operations
@@ -113,6 +118,9 @@ func main() {
 	if sourceFilePath == "" {
 		log.Fatalf("Source file path is required")
 	}
+	
+	// Set up graceful shutdown handling
+	setupGracefulShutdown()
 
 	// Check if file exists and is readable
 	fileInfo, err := os.Stat(sourceFilePath)
@@ -170,8 +178,22 @@ func main() {
 	log.Printf("Serving file: %s", sourceFilePath)
 	log.Printf("Use: curl http://localhost%s -o output.file", serverAddr)
 	
-	// Start the server (this blocks until the server is stopped)
-	log.Fatal(http.ListenAndServe(serverAddr, nil))
+	// Create a custom server for better shutdown control
+	server := &http.Server{
+		Addr:    serverAddr,
+		Handler: nil, // Use the default ServeMux
+	}
+	
+	// Start the server in a goroutine
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+	
+	// Block until shutdown signal received
+	shutdownChan := make(chan struct{})
+	<-shutdownChan
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
